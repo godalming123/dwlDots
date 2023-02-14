@@ -1,0 +1,5 @@
+wlroots-devel
+xkbcommon-devel
+libinput-devel
+pkg-config
+wayland-devel

@@ -2807,9 +2807,7 @@ main(int argc, char *argv[])
 	int c;
 
 	while ((c = getopt(argc, argv, "s:hv")) != -1) {
-		if (c == 's')
-			startup_cmd = optarg;
-		else if (c == 'v')
+		if (c == 'v')
 			die("dwl " VERSION);
 		else
 			goto usage;
@@ -2821,7 +2819,7 @@ main(int argc, char *argv[])
 	if (!getenv("XDG_RUNTIME_DIR"))
 		die("XDG_RUNTIME_DIR must be set");
 	setup();
-	run(startup_cmd);
+	run("somebar");
 	cleanup();
 	return EXIT_SUCCESS;
 

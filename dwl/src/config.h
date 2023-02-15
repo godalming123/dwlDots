@@ -7,7 +7,7 @@ static const float focuscolor[]            = {0.0, 0.0, 0.5, 1.0};
 /* To conform the xdg-protocol, set the alpha to zero to restore the old behavior */
 static const float fullscreen_bg[]         = {0.1, 0.1, 0.1, 1.0};
 /* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *tags[] = { "1", "2", "3", "4", "5"};
 
 /* WINDOW RULES */
 static const Rule rules[0] = {
@@ -48,7 +48,6 @@ static const int tap_to_click = 1;
 static const int tap_and_drag = 1;
 static const int drag_lock = 1;
 static const int disable_while_typing = 1;
-static const int left_handed = 0;
 static const int middle_button_emulation = 0;
 /* You can choose between:
 LIBINPUT_CONFIG_SCROLL_NO_SCROLL
@@ -66,6 +65,7 @@ static const enum libinput_config_click_method click_method = LIBINPUT_CONFIG_CL
 
 /* MOUSE */
 static const int natural_scrolling = 0;
+static const int left_handed = 0;
 /* You can choose between:
 LIBINPUT_CONFIG_SEND_EVENTS_ENABLED
 LIBINPUT_CONFIG_SEND_EVENTS_DISABLED
@@ -99,7 +99,8 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 
 /* commands */
 static const char *termcmd[] = { "wayst", NULL };
-static const char *menucmd[] = { "tofi-drun", "" };
+static const char *menucmd[] = { "tofi-drun", " --drun-launch=true" };
+/*static const char *menucmd[] = { "tofi-drun", NULL };*/
 
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
@@ -108,35 +109,16 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_Return,     spawn,          {.v = termcmd} },
 	{ MODKEY,                    XKB_KEY_d,          focusstack,     {.i = +1} },
 	{ MODKEY,                    XKB_KEY_a,          focusstack,     {.i = -1} },
-	{ MODKEY,                    XKB_KEY_w,          view,     {.ui = +1} },
-	{ MODKEY,                    XKB_KEY_s,          view,     {.ui = -1} },
-	{ MODKEY,                    XKB_KEY_i,          incnmaster,     {.i = +1} },
-	{ MODKEY,                    XKB_KEY_u,          incnmaster,     {.i = -1} },
-	{ MODKEY,                    XKB_KEY_h,          setmfact,       {.f = -0.05} },
-	{ MODKEY,                    XKB_KEY_l,          setmfact,       {.f = +0.05} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_Return,     zoom,           {0} },
-	{ MODKEY,                    XKB_KEY_Tab,        view,           {0} },
+	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_a,          incnmaster,     {.i = +1} },
+	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,          incnmaster,     {.i = -1} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,          setmfact,       {.f = -0.05} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,          setmfact,       {.f = +0.05} },
 	{ MODKEY,                    XKB_KEY_q,          killclient,     {0} },
 	{ MODKEY,                    XKB_KEY_m,          setlayout,      {.v = &layouts[0]} },
 	{ MODKEY,                    XKB_KEY_t,          setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                    XKB_KEY_space,      setlayout,      {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,      togglefloating, {0} },
-	{ MODKEY,                    XKB_KEY_e,         togglefullscreen, {0} },
-	{ MODKEY,                    XKB_KEY_0,          view,           {.ui = ~0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_parenright, tag,            {.ui = ~0} },
-	{ MODKEY,                    XKB_KEY_comma,      focusmon,       {.i = WLR_DIRECTION_LEFT} },
-	{ MODKEY,                    XKB_KEY_period,     focusmon,       {.i = WLR_DIRECTION_RIGHT} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_less,       tagmon,         {.i = WLR_DIRECTION_LEFT} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_greater,    tagmon,         {.i = WLR_DIRECTION_RIGHT} },
-	TAGKEYS(          XKB_KEY_1, XKB_KEY_exclam,                     0),
-	TAGKEYS(          XKB_KEY_2, XKB_KEY_at,                         1),
-	TAGKEYS(          XKB_KEY_3, XKB_KEY_numbersign,                 2),
-	TAGKEYS(          XKB_KEY_4, XKB_KEY_dollar,                     3),
-	TAGKEYS(          XKB_KEY_5, XKB_KEY_percent,                    4),
-	TAGKEYS(          XKB_KEY_6, XKB_KEY_asciicircum,                5),
-	TAGKEYS(          XKB_KEY_7, XKB_KEY_ampersand,                  6),
-	TAGKEYS(          XKB_KEY_8, XKB_KEY_asterisk,                   7),
-	TAGKEYS(          XKB_KEY_9, XKB_KEY_parenleft,                  8),
+	{ MODKEY,                    XKB_KEY_f,         togglefullscreen, {0} },
 	{ MODKEY,                    XKB_KEY_Escape,     quit,           {0} },
 
 	/* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */

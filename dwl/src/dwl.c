@@ -295,12 +295,14 @@ static void tile(Monitor *m);
 static void togglefloating(const Arg *arg);
 static void togglefullscreen(const Arg *arg);
 static void toggletag(const Arg *arg);
+static void toggleview(const Arg *arg);
 static void unlocksession(struct wl_listener *listener, void *data);
 static void unmaplayersurfacenotify(struct wl_listener *listener, void *data);
 static void unmapnotify(struct wl_listener *listener, void *data);
 static void updatemons(struct wl_listener *listener, void *data);
 static void updatetitle(struct wl_listener *listener, void *data);
 static void urgent(struct wl_listener *listener, void *data);
+static void view(const Arg *arg);
 static void virtualkeyboard(struct wl_listener *listener, void *data);
 static Monitor *xytomon(double x, double y);
 static struct wlr_scene_node *xytonode(double x, double y, struct wlr_surface **psurface,
@@ -2195,6 +2197,17 @@ void toggletag(const Arg *arg) {
 	printstatus();
 }
 
+void toggleview(const Arg *arg) {
+	unsigned int newtagset = selmon ? selmon->tagset[selmon->seltags] ^ (arg->ui & TAGMASK) : 0;
+
+	if (newtagset) {
+		selmon->tagset[selmon->seltags] = newtagset;
+		focusclient(focustop(selmon), 1);
+		arrange(selmon);
+	}
+	printstatus();
+}
+
 void unlocksession(struct wl_listener *listener, void *data) {
 	SessionLock *lock = wl_container_of(listener, lock, unlock);
 	destroylock(lock, 1);
@@ -2337,6 +2350,17 @@ void urgent(struct wl_listener *listener, void *data) {
 		c->isurgent = 1;
 		printstatus();
 	}
+}
+
+void view(const Arg *arg) {
+	if (!selmon || (arg->ui & TAGMASK) == selmon->tagset[selmon->seltags])
+		return;
+	selmon->seltags ^= 1; /* toggle sel tagset */
+	if (arg->ui & TAGMASK)
+		selmon->tagset[selmon->seltags] = arg->ui & TAGMASK;
+	focusclient(focustop(selmon), 1);
+	arrange(selmon);
+	printstatus();
 }
 
 void virtualkeyboard(struct wl_listener *listener, void *data) {

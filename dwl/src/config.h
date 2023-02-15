@@ -91,8 +91,7 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 #define TAGKEYS(KEY,SKEY,TAG) \
 	{ MODKEY,                    KEY,            view,            {.ui = 1 << TAG} }, \
 	{ MODKEY|WLR_MODIFIER_CTRL,  KEY,            toggleview,      {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_SHIFT, SKEY,           tag,             {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT,SKEY,toggletag, {.ui = 1 << TAG} }
+	{ MODKEY|WLR_MODIFIER_SHIFT, SKEY,           tag,             {.ui = 1 << TAG} }
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
@@ -104,22 +103,27 @@ static const char *menucmd[] = { "tofi-drun", " --drun-launch=true" };
 
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
-	/* modifier                  key                 function        argument */
-	{ MODKEY,                    XKB_KEY_p,          spawn,          {.v = menucmd} },
-	{ MODKEY,                    XKB_KEY_Return,     spawn,          {.v = termcmd} },
-	{ MODKEY,                    XKB_KEY_d,          focusstack,     {.i = +1} },
-	{ MODKEY,                    XKB_KEY_a,          focusstack,     {.i = -1} },
-	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_a,          incnmaster,     {.i = +1} },
-	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,          incnmaster,     {.i = -1} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,          setmfact,       {.f = -0.05} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,          setmfact,       {.f = +0.05} },
-	{ MODKEY,                    XKB_KEY_q,          killclient,     {0} },
-	{ MODKEY,                    XKB_KEY_m,          setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                    XKB_KEY_t,          setlayout,      {.v = &layouts[1]} },
-	{ MODKEY,                    XKB_KEY_space,      setlayout,      {0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,      togglefloating, {0} },
-	{ MODKEY,                    XKB_KEY_f,         togglefullscreen, {0} },
-	{ MODKEY,                    XKB_KEY_Escape,     quit,           {0} },
+	/* modifier                  key                            function          argument */
+	{ MODKEY,                    XKB_KEY_p,                     spawn,            {.v = menucmd} },
+	{ MODKEY,                    XKB_KEY_Return,                spawn,            {.v = termcmd} },
+	{ MODKEY,                    XKB_KEY_d,                     focusstack,       {.i = +1} },
+	{ MODKEY,                    XKB_KEY_a,                     focusstack,       {.i = -1} },
+	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_a,                     incnmaster,       {.i = +1} },
+	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,                     incnmaster,       {.i = -1} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,                     setmfact,         {.f = -0.05} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,                     setmfact,         {.f = +0.05} },
+	{ MODKEY,                    XKB_KEY_q,                     killclient,       {0} },
+	{ MODKEY,                    XKB_KEY_m,                     setlayout,        {.v = &layouts[0]} },
+	{ MODKEY,                    XKB_KEY_t,                     setlayout,        {.v = &layouts[1]} },
+	{ MODKEY,                    XKB_KEY_space,                 setlayout,        {0} },
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,                 togglefloating,   {0} },
+	{ MODKEY,                    XKB_KEY_f,                     togglefullscreen, {0} },
+	{ MODKEY,                    XKB_KEY_Escape,                quit,             {0} },
+	TAGKEYS(                     XKB_KEY_1, XKB_KEY_exclam,                       0),
+	TAGKEYS(                     XKB_KEY_2, XKB_KEY_at,                           1),
+	TAGKEYS(                     XKB_KEY_3, XKB_KEY_numbersign,                   2),
+	TAGKEYS(                     XKB_KEY_4, XKB_KEY_dollar,                       3),
+	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
 
 	/* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */
 	{ WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_Terminate_Server, quit, {0} },

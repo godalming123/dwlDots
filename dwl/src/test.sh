@@ -1,0 +1,2 @@
+#!/bin/sh
+tofi-drun --drun-launch=true --width=100% --height=19 --anchor=top --margin-left=0 --margin-right=0 --margin-top=0 --margin-bottom=0 --selection-padding=10 --padding-left=10 --padding-right=10 --padding-top=0 --padding-bottom=0 --text-color=#CCCCCC --background-color=#FFFFFF --selection-color=#000000 --selection-background=#2E3440 --result-spacing=20 --num-results=12 --border-width=0 --outline-width=0 --font=monospace --corner-radius=0 --terminal=wayst --prompt-text='Launch: ' --horizontal=true --font-size=10

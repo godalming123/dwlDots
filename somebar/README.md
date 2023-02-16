@@ -1,4 +1,4 @@
-# Godalmings somebar congigs
+# Godalmings somebar configs
 
 ## Dependencies
 

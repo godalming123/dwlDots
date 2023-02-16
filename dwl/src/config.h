@@ -2,10 +2,8 @@
 static const int sloppyfocus               = 1;  /* focus follows mouse */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
 static const unsigned int borderpx         = 0;  /* border pixel of windows */
-static const float bordercolor[]           = {0.5, 0.5, 0.5, 1.0};
-static const float focuscolor[]            = {0.0, 0.0, 0.5, 1.0};
 /* To conform the xdg-protocol, set the alpha to zero to restore the old behavior */
-static const float fullscreen_bg[]         = {0.1, 0.1, 0.1, 1.0};
+static const float fullscreen_bg[]         = {0.18, 0.2, 0.25, 1.0};
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5"};
 
@@ -89,9 +87,10 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 #define MODKEY WLR_MODIFIER_ALT
 
 #define TAGKEYS(KEY,SKEY,TAG) \
-	{ MODKEY,                    KEY,            view,            {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_CTRL,  KEY,            toggleview,      {.ui = 1 << TAG} }, \
-	{ MODKEY|WLR_MODIFIER_SHIFT, SKEY,           tag,             {.ui = 1 << TAG} }
+	{ MODKEY,                                      KEY,            view,            {.ui = 1 << TAG} }, \
+	{ MODKEY|WLR_MODIFIER_CTRL,                    KEY,            toggleview,      {.ui = 1 << TAG} }, \
+	{ MODKEY|WLR_MODIFIER_SHIFT,                   SKEY,           tag,             {.ui = 1 << TAG} }, \
+	{ MODKEY|WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT, SKEY,           toggletag,       {.ui = 1 << TAG} }
 
 /* helper for spawning shell commands in the pre dwm-5.0 fashion */
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
@@ -107,7 +106,7 @@ static const char *menucmd[] = {
 	"--height=25",
 
 	// position
-	"--anchor=top",
+	"--anchor=bottom",
 
 	// margins
 	"--margin-left=0",
@@ -138,10 +137,11 @@ static const char *menucmd[] = {
 	"--font=monospace",
 	"--corner-radius=0",
 	"--selection-background-corner-radius=6",
+	"--font=/usr/share/fonts/TTF/LiberationSans-Regular.ttf",
 
 	// other options
 	"--terminal=wayst",
-	"--prompt-text==> ",
+	"--prompt-text= > ",
 	"--horizontal=true",
 	"--font-size=12",
 	NULL
@@ -152,17 +152,16 @@ static const Key keys[] = {
 	/* modifier                  key                            function          argument */
 	{ MODKEY,                    XKB_KEY_p,                     spawn,            {.v = menucmd} },
 	{ MODKEY,                    XKB_KEY_Return,                spawn,            {.v = termcmd} },
+	{ MODKEY,                    XKB_KEY_q,                     killclient,       {0} },
 	{ MODKEY,                    XKB_KEY_d,                     focusstack,       {.i = +1} },
 	{ MODKEY,                    XKB_KEY_a,                     focusstack,       {.i = -1} },
 	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_a,                     incnmaster,       {.i = +1} },
 	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,                     incnmaster,       {.i = -1} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,                     setmfact,         {.f = -0.05} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,                     setmfact,         {.f = +0.05} },
-	{ MODKEY,                    XKB_KEY_q,                     killclient,       {0} },
 	{ MODKEY,                    XKB_KEY_m,                     setlayout,        {.v = &layouts[0]} },
 	{ MODKEY,                    XKB_KEY_t,                     setlayout,        {.v = &layouts[1]} },
-	{ MODKEY,                    XKB_KEY_space,                 setlayout,        {0} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_space,                 togglefloating,   {0} },
+	{ MODKEY,                    XKB_KEY_space,		    togglefloating,   {0} },
 	{ MODKEY,                    XKB_KEY_f,                     togglefullscreen, {0} },
 	{ MODKEY,                    XKB_KEY_Escape,                quit,             {0} },
 	TAGKEYS(                     XKB_KEY_1, XKB_KEY_exclam,                       0),
@@ -179,7 +178,7 @@ static const Key keys[] = {
 };
 
 static const Button buttons[] = {
-	{ MODKEY, BTN_LEFT,   moveresize,     {.ui = CurMove} },
-	{ MODKEY, BTN_MIDDLE, togglefloating, {0} },
-	{ MODKEY, BTN_RIGHT,  moveresize,     {.ui = CurResize} },
+	{ MODKEY, BTN_LEFT,   moveresize,       {.ui = CurMove} },
+	{ MODKEY, BTN_MIDDLE, togglefullscreen, {0} },
+	{ MODKEY, BTN_RIGHT,  moveresize,       {.ui = CurResize} },
 };

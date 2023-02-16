@@ -97,7 +97,6 @@ typedef struct {
 	struct wlr_box geom;  /* layout-relative, includes border */
 	Monitor *mon;
 	struct wlr_scene_tree *scene;
-	struct wlr_scene_rect *border[4]; /* top, bottom, left, right */
 	struct wlr_scene_tree *scene_surface;
 	struct wl_list link;
 	struct wl_list flink;
@@ -211,13 +210,6 @@ typedef struct {
 } SessionLock;
 
 /* function declarations */
-static void applybounds(Client *c, struct wlr_box *bbox);
-static void applyrules(Client *c);
-static void arrange(Monitor *m);
-static void arrangelayer(Monitor *m, struct wl_list *list,
-		struct wlr_box *usable_area, int exclusive);
-static void arrangelayers(Monitor *m);
-static void axisnotify(struct wl_listener *listener, void *data);
 static void buttonpress(struct wl_listener *listener, void *data);
 static void chvt(const Arg *arg);
 static void checkidleinhibitor(struct wlr_surface *exclude);
@@ -390,7 +382,7 @@ static struct wl_listener session_lock_mgr_destroy = {.notify = destroysessionmg
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
 
 /* function implementations */
-void applybounds(Client *c, struct wlr_box *bbox) {
+static void applybounds(Client *c, struct wlr_box *bbox) {
 	if (!c->isfullscreen) {
 		struct wlr_box min = {0}, max = {0};
 		client_get_size_hints(c, &max, &min);
@@ -415,7 +407,7 @@ void applybounds(Client *c, struct wlr_box *bbox) {
 		c->geom.y = bbox->y;
 }
 
-void applyrules(Client *c) {
+static void applyrules(Client *c) {
 	/* rule matching */
 	const char *appid, *title;
 	unsigned int i, newtags = 0;
@@ -443,7 +435,7 @@ void applyrules(Client *c) {
 	setmon(c, mon, newtags);
 }
 
-void arrange(Monitor *m) {
+static void arrange(Monitor *m) {
 	Client *c;
 	wl_list_for_each(c, &clients, link)
 		if (c->mon == m)
@@ -458,7 +450,7 @@ void arrange(Monitor *m) {
 	checkidleinhibitor(NULL);
 }
 
-void arrangelayer(Monitor *m, struct wl_list *list, struct wlr_box *usable_area, int exclusive) {
+static void arrangelayer(Monitor *m, struct wl_list *list, struct wlr_box *usable_area, int exclusive) {
 	LayerSurface *layersurface;
 	struct wlr_box full_area = m->m;
 
@@ -477,7 +469,7 @@ void arrangelayer(Monitor *m, struct wl_list *list, struct wlr_box *usable_area,
 	}
 }
 
-void arrangelayers(Monitor *m) {
+static void arrangelayers(Monitor *m) {
 	int i;
 	struct wlr_box usable_area = m->m;
 	uint32_t layers_above_shell[] = {
@@ -517,7 +509,7 @@ void arrangelayers(Monitor *m) {
 	}
 }
 
-void axisnotify(struct wl_listener *listener, void *data) {
+static void axisnotify(struct wl_listener *listener, void *data) {
 	/* This event is forwarded by the cursor when a pointer emits an axis event,
 	 * for example when you move the scroll wheel. */
 	struct wlr_pointer_axis_event *event = data;
@@ -1117,12 +1109,6 @@ void focusclient(Client *c, int lift) {
 		selmon = c->mon;
 		c->isurgent = 0;
 		client_restack_surface(c);
-
-		/* Don't change border color if there is an exclusive focus or we are
-		 * handling a drag operation */
-		if (!exclusive_focus && !seat->drag)
-			for (i = 0; i < 4; i++)
-				wlr_scene_rect_set_color(c->border[i], focuscolor);
 	}
 
 	/* Deactivate old client if focus is changing */
@@ -1133,19 +1119,16 @@ void focusclient(Client *c, int lift) {
 		Client *w = NULL;
 		LayerSurface *l = NULL;
 		int type = toplevel_from_wlr_surface(old, &w, &l);
-		if (type == LayerShell && l->scene->node.enabled
-				&& l->layer_surface->current.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP) {
+		// Do not do anything more if the client if a layer surface on the top layer
+		if (type == LayerShell && l->scene->node.enabled && l->layer_surface->current.layer >= ZWLR_LAYER_SHELL_V1_LAYER_TOP)
 			return;
-		} else if (w && w == exclusive_focus && client_wants_focus(w)) {
+		// Also don't do anything if the client has exclusize focus and wants focus
+		else if (w && w == exclusive_focus && client_wants_focus(w))
 			return;
 		/* Don't deactivate old client if the new one wants focus, as this causes issues with winecfg
 		 * and probably other clients */
-		} else if (w && !client_is_unmanaged(w) && (!c || !client_wants_focus(c))) {
-			for (i = 0; i < 4; i++)
-				wlr_scene_rect_set_color(w->border[i], bordercolor);
-
+		else if (w && !client_is_unmanaged(w) && (!c || !client_wants_focus(c)))
 			client_activate_surface(old, 0);
-		}
 	}
 	printstatus();
 
@@ -1408,11 +1391,6 @@ void mapnotify(struct wl_listener *listener, void *data) {
 			exclusive_focus = c;
 		}
 		goto unset_fullscreen;
-	}
-
-	for (i = 0; i < 4; i++) {
-		c->border[i] = wlr_scene_rect_create(c->scene, 0, 0, bordercolor);
-		c->border[i]->node.data = c;
 	}
 
 	/* Initialize client geometry with room for border */
@@ -1750,13 +1728,6 @@ void resize(Client *c, struct wlr_box geo, int interact) {
 	/* Update scene-graph, including borders */
 	wlr_scene_node_set_position(&c->scene->node, c->geom.x, c->geom.y);
 	wlr_scene_node_set_position(&c->scene_surface->node, c->bw, c->bw);
-	wlr_scene_rect_set_size(c->border[0], c->geom.width, c->bw);
-	wlr_scene_rect_set_size(c->border[1], c->geom.width, c->bw);
-	wlr_scene_rect_set_size(c->border[2], c->bw, c->geom.height - 2 * c->bw);
-	wlr_scene_rect_set_size(c->border[3], c->bw, c->geom.height - 2 * c->bw);
-	wlr_scene_node_set_position(&c->border[1]->node, 0, c->geom.height - c->bw);
-	wlr_scene_node_set_position(&c->border[2]->node, 0, c->bw);
-	wlr_scene_node_set_position(&c->border[3]->node, c->geom.width - c->bw, c->bw);
 
 	/* this is a no-op if size hasn't changed */
 	c->resize = client_set_size(c, c->geom.width - 2 * c->bw,

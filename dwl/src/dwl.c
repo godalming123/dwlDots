@@ -210,6 +210,13 @@ typedef struct {
 } SessionLock;
 
 /* function declarations */
+static void applybounds(Client *c, struct wlr_box *bbox);
+static void applyrules(Client *c);
+static void arrange(Monitor *m);
+static void arrangelayer(Monitor *m, struct wl_list *list,
+		struct wlr_box *usable_area, int exclusive);
+static void arrangelayers(Monitor *m);
+static void axisnotify(struct wl_listener *listener, void *data);
 static void buttonpress(struct wl_listener *listener, void *data);
 static void chvt(const Arg *arg);
 static void checkidleinhibitor(struct wlr_surface *exclude);
@@ -301,7 +308,6 @@ static struct wlr_scene_node *xytonode(double x, double y, struct wlr_surface **
 		Client **pc, LayerSurface **pl, double *nx, double *ny);
 
 /* variables */
-static const char broken[] = "broken";
 static const char *cursor_image = "left_ptr";
 static pid_t child_pid = -1;
 static int locked;
@@ -382,7 +388,7 @@ static struct wl_listener session_lock_mgr_destroy = {.notify = destroysessionmg
 struct NumTags { char limitexceeded[LENGTH(tags) > 31 ? -1 : 1]; };
 
 /* function implementations */
-static void applybounds(Client *c, struct wlr_box *bbox) {
+void applybounds(Client *c, struct wlr_box *bbox) {
 	if (!c->isfullscreen) {
 		struct wlr_box min = {0}, max = {0};
 		client_get_size_hints(c, &max, &min);
@@ -407,7 +413,7 @@ static void applybounds(Client *c, struct wlr_box *bbox) {
 		c->geom.y = bbox->y;
 }
 
-static void applyrules(Client *c) {
+void applyrules(Client *c) {
 	/* rule matching */
 	const char *appid, *title;
 	unsigned int i, newtags = 0;
@@ -416,9 +422,9 @@ static void applyrules(Client *c) {
 
 	c->isfloating = client_is_float_type(c);
 	if (!(appid = client_get_appid(c)))
-		appid = broken;
+		appid = "AppID_not_specified";
 	if (!(title = client_get_title(c)))
-		title = broken;
+		title = "Title_not_specified";
 
 	for (r = rules; r < END(rules); r++) {
 		if ((!r->title || strstr(title, r->title))
@@ -435,7 +441,7 @@ static void applyrules(Client *c) {
 	setmon(c, mon, newtags);
 }
 
-static void arrange(Monitor *m) {
+void arrange(Monitor *m) {
 	Client *c;
 	wl_list_for_each(c, &clients, link)
 		if (c->mon == m)
@@ -450,7 +456,7 @@ static void arrange(Monitor *m) {
 	checkidleinhibitor(NULL);
 }
 
-static void arrangelayer(Monitor *m, struct wl_list *list, struct wlr_box *usable_area, int exclusive) {
+void arrangelayer(Monitor *m, struct wl_list *list, struct wlr_box *usable_area, int exclusive) {
 	LayerSurface *layersurface;
 	struct wlr_box full_area = m->m;
 
@@ -469,7 +475,7 @@ static void arrangelayer(Monitor *m, struct wl_list *list, struct wlr_box *usabl
 	}
 }
 
-static void arrangelayers(Monitor *m) {
+void arrangelayers(Monitor *m) {
 	int i;
 	struct wlr_box usable_area = m->m;
 	uint32_t layers_above_shell[] = {
@@ -509,7 +515,7 @@ static void arrangelayers(Monitor *m) {
 	}
 }
 
-static void axisnotify(struct wl_listener *listener, void *data) {
+void axisnotify(struct wl_listener *listener, void *data) {
 	/* This event is forwarded by the cursor when a pointer emits an axis event,
 	 * for example when you move the scroll wheel. */
 	struct wlr_pointer_axis_event *event = data;
@@ -1660,8 +1666,8 @@ void printstatus(void) {
 		if ((c = focustop(m))) {
 			title = client_get_title(c);
 			appid = client_get_appid(c);
-			printf("%s title %s\n", m->wlr_output->name, title ? title : broken);
-			printf("%s appid %s\n", m->wlr_output->name, appid ? appid : broken);
+			printf("%s title %s\n", m->wlr_output->name, title); // TODO: check this code works
+			printf("%s appid %s\n", m->wlr_output->name, appid); // TODO: check this code works
 			printf("%s fullscreen %u\n", m->wlr_output->name, c->isfullscreen);
 			printf("%s floating %u\n", m->wlr_output->name, c->isfloating);
 			sel = c->tags;
@@ -2036,8 +2042,8 @@ void setup(void) {
 	 * when the pointer moves. However, we can attach input devices to it, and
 	 * it will generate aggregate events for all of them. In these events, we
 	 * can choose how we want to process them, forwarding them to clients and
-	 * moving the cursor around. More detail on this process is described in my
-	 * input handling blog post:
+	 * moving the cursor around. More detail on this process is described in
+	 * Drew Devault's input handling blog post:
 	 *
 	 * https://drewdevault.com/2018/07/17/Input-handling-in-wlroots.html
 	 *

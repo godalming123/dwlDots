@@ -1,9 +1,4 @@
-# somebar - dwm-like bar for dwl
-
-![Screenshot](screenshot.png)
-
-The mailing list for this project is
-[~raphi/public-inbox@lists.sr.ht](mailto:~raphi/public-inbox@lists.sr.ht).
+# Godalmings somebar congigs
 
 ## Dependencies
 
@@ -16,20 +11,16 @@ The mailing list for this project is
 * libpangocairo
 
 ```
-sudo apt install build-essential meson ninja-build \
-    libwayland-bin libwayland-client0 libwayland-cursor0 libwayland-dev \
-    libcairo2 libcairo2-dev \
-    libpango-1.0-0 libpango1.0-dev libpangocairo-1.0-0
-
-# or
-
-sudo pacman -S base-devel meson \
-    wayland wayland-protocols cairo pango
+sudo xbps-install -Su meson wayland wayland-protocols cairo pango
 ```
-
-## Configuration
-
-Copy `src/config.def.hpp` to `src/config.hpp`, and adjust if needed.
+OR
+```
+sudo apt install build-essential meson ninja-build libwayland-bin libwayland-client0 libwayland-cursor0 libwayland-dev libcairo2 libcairo2-dev libpango-1.0-0 libpango1.0-dev libpangocairo-1.0-0
+```
+OR
+```
+sudo pacman -S base-devel meson wayland wayland-protocols cairo pango
+```
 
 ## Building
 
@@ -64,28 +55,6 @@ The maintainer of somebar also maintains
 [someblocks](https://git.sr.ht/~raphi/someblocks/),
 a fork of [dwmblocks](https://github.com/torrinfail/dwmblocks) that outputs
 to somebar instead of dwm's bar.
-
-## IPC
-
-Out of the box, somebar cannot control dwl. Clicking on the tag bar has no
-effect, because there is no communication channel from somebar back to dwl.
-
-If you apply the patch `contrib/ipc.patch`, then somebar will
-
-1. Not read stdin anymore, and instead use a wayland extension to read dwl's
-   state. This means you must close stdin yourself, if you choose to launch
-   somebar using dwl's -s flag.
-2. somebar can use the same wayland extension to send commands back to dwl.
-   This means that clicking on tags will switch to that tag (this can of course
-   be customized in config.h).
-
-If you apply the IPC patch to somebar, then
-**dwl must have the [wayland-ipc patch](https://git.sr.ht/~raphi/dwl/blob/master/patches/wayland-ipc.patch) applied too**,
-since dwl must implement the wayland extension too.
-
-## Other patches
-
-Like all suckless software, somebar can be customized via patches. You can find some patches in the contrib folder with descriptions written in them.
 
 ## License
 

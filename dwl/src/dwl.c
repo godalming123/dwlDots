@@ -1368,8 +1368,8 @@ void mapnotify(struct wl_listener *listener, void *data) {
 
 	/* Create scene tree for this client and its border */
 	c->scene = wlr_scene_tree_create(layers[LyrTile]);
-	wlr_scene_node_set_enabled(&c->scene->node, false);
-	c->scene_surface = true
+	wlr_scene_node_set_enabled(&c->scene->node, c->type != XDGShell);
+	c->scene_surface = c->type == XDGShell
 			? wlr_scene_xdg_surface_create(c->scene, c->surface.xdg)
 			: wlr_scene_subsurface_tree_create(c->scene, client_surface(c));
 	if (client_surface(c)) {
@@ -1409,7 +1409,7 @@ void mapnotify(struct wl_listener *listener, void *data) {
 	 * we set the same tags and monitor than its parent, if not
 	 * try to apply rules for them */
 	 /* TODO: https://github.com/djpohly/dwl/pull/334#issuecomment-1330166324 */
-	if ((p = client_get_parent(c))) {
+	if ((c->type == XDGShell && p = client_get_parent(c))) {
 		c->isfloating = 1;
 		wlr_scene_node_reparent(&c->scene->node, layers[LyrFloat]);
 		setmon(c, p->mon, p->tags);

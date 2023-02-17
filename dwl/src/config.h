@@ -148,7 +148,7 @@ static const char *menucmd[] = {
 };
 
 static const Key keys[] = {
-	/* Note that Shift changes certain key codes: c -> C, 2 -> at, etc. */
+	/* Note that Shift changes certain key codes: c -> C, 2 -> quotedbl, etc. */
 	/* modifier                  key                            function          argument */
 	{ MODKEY,                    XKB_KEY_p,                     spawn,            {.v = menucmd} },
 	{ MODKEY,                    XKB_KEY_Return,                spawn,            {.v = termcmd} },
@@ -170,11 +170,10 @@ static const Key keys[] = {
 	TAGKEYS(                     XKB_KEY_4, XKB_KEY_dollar,                       3),
 	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
 
-	/* Ctrl-Alt-Backspace and Ctrl-Alt-Fx used to be handled by X server */
-	{ WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_Terminate_Server, quit, {0} },
+	/* Ctrl-Alt-Fx used to be handled by X server
+	   but under wayland we need to handle it */
 #define CHVT(n) { WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_XF86Switch_VT_##n, chvt, {.ui = (n)} }
 	CHVT(1), CHVT(2), CHVT(3), CHVT(4), CHVT(5), CHVT(6),
-	CHVT(7), CHVT(8), CHVT(9), CHVT(10), CHVT(11), CHVT(12),
 };
 
 static const Button buttons[] = {

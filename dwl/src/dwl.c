@@ -52,11 +52,6 @@
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/util/log.h>
 #include <xkbcommon/xkbcommon.h>
-#ifdef XWAYLAND
-#include <wlr/xwayland.h>
-#include <X11/Xlib.h>
-#include <xcb/xcb_icccm.h>
-#endif
 
 #include "util.h"
 
@@ -93,7 +88,7 @@ typedef struct {
 typedef struct Monitor Monitor;
 typedef struct {
 	/* Must keep these three elements in this order */
-	unsigned int type; /* XDGShell or X11* */
+	unsigned int type; /* XDGShell or X11 */
 	struct wlr_box geom;  /* layout-relative, includes border */
 	Monitor *mon;
 	struct wlr_scene_tree *scene;
@@ -1373,8 +1368,8 @@ void mapnotify(struct wl_listener *listener, void *data) {
 
 	/* Create scene tree for this client and its border */
 	c->scene = wlr_scene_tree_create(layers[LyrTile]);
-	wlr_scene_node_set_enabled(&c->scene->node, c->type != XDGShell);
-	c->scene_surface = c->type == XDGShell
+	wlr_scene_node_set_enabled(&c->scene->node, false);
+	c->scene_surface = true
 			? wlr_scene_xdg_surface_create(c->scene, c->surface.xdg)
 			: wlr_scene_subsurface_tree_create(c->scene, client_surface(c));
 	if (client_surface(c)) {
@@ -1414,7 +1409,7 @@ void mapnotify(struct wl_listener *listener, void *data) {
 	 * we set the same tags and monitor than its parent, if not
 	 * try to apply rules for them */
 	 /* TODO: https://github.com/djpohly/dwl/pull/334#issuecomment-1330166324 */
-	if (c->type == XDGShell && (p = client_get_parent(c))) {
+	if ((p = client_get_parent(c))) {
 		c->isfloating = 1;
 		wlr_scene_node_reparent(&c->scene->node, layers[LyrFloat]);
 		setmon(c, p->mon, p->tags);

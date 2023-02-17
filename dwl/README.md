@@ -8,6 +8,11 @@ Simply install these (and their `-devel` versions if your distro has separate
 development packages) and run `make` from the `src/` directry. If you wish to
 build against a Git version of wlroots, check out the [wlroots-next branch].
 
+EG for void linux:
+```
+sudo xbps-install -S wlroots-devel wayland-devel
+```
+
 ## Running dwl
 
 Dwl can be run on any of the backends supported by wlroots. This means you can

@@ -95,10 +95,7 @@ typedef struct {
 	struct wlr_scene_tree *scene_surface;
 	struct wl_list link;
 	struct wl_list flink;
-	union {
-		struct wlr_xdg_surface *xdg;
-		struct wlr_xwayland_surface *xwayland;
-	} surface;
+	struct wlr_xdg_surface *xdg_surface;
 	struct wl_listener commit;
 	struct wl_listener map;
 	struct wl_listener maximize;
@@ -680,7 +677,7 @@ void commitnotify(struct wl_listener *listener, void *data) {
 		c->isfloating ? resize(c, c->geom, 1) : arrange(c->mon);
 
 	/* mark a pending resize as completed */
-	if (c->resize && c->resize <= c->surface.xdg->current.configure_serial)
+	if (c->resize && c->resize <= c->xdg_surface->current.configure_serial)
 		c->resize = 0;
 }
 
@@ -895,7 +892,7 @@ void createnotify(struct wl_listener *listener, void *data) {
 
 	/* Allocate a Client for this surface */
 	c = xdg_surface->data = ecalloc(1, sizeof(*c));
-	c->surface.xdg = xdg_surface;
+	c->xdg_surface = xdg_surface;
 	c->bw = borderpx;
 
 	LISTEN(&xdg_surface->events.map, &c->map, mapnotify);
@@ -1061,7 +1058,6 @@ Monitor * dirtomon(enum wlr_direction dir) {
 
 void focusclient(Client *c, int lift) {
 	struct wlr_surface *old = seat->keyboard_state.focused_surface;
-	int i;
 
 	if (locked)
 		return;
@@ -1340,7 +1336,7 @@ void mapnotify(struct wl_listener *listener, void *data) {
 	c->scene = wlr_scene_tree_create(layers[LyrTile]);
 	wlr_scene_node_set_enabled(&c->scene->node, c->type != XDGShell);
 	c->scene_surface = c->type == XDGShell
-			? wlr_scene_xdg_surface_create(c->scene, c->surface.xdg)
+			? wlr_scene_xdg_surface_create(c->scene, c->xdg_surface)
 			: wlr_scene_subsurface_tree_create(c->scene, client_surface(c));
 	if (client_surface(c)) {
 		client_surface(c)->data = c->scene;
@@ -1404,7 +1400,7 @@ void maximizenotify(struct wl_listener *listener, void *data) {
 	 * to conform to xdg-shell protocol we still must send a configure.
 	 * wlr_xdg_surface_schedule_configure() is used to send an empty reply. */
 	Client *c = wl_container_of(listener, c, maximize);
-	wlr_xdg_surface_schedule_configure(c->surface.xdg);
+	wlr_xdg_surface_schedule_configure(c->xdg_surface);
 }
 
 void monocle(Monitor *m) {

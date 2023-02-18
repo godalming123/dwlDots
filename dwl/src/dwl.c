@@ -104,7 +104,6 @@ typedef struct {
 	struct wl_listener set_title;
 	struct wl_listener fullscreen;
 	struct wlr_box prev; /* layout-relative, includes border */
-	unsigned int bw;
 	unsigned int tags;
 	int isfloating, isurgent, isfullscreen;
 	uint32_t resize; /* configure serial of a pending resize */
@@ -384,23 +383,23 @@ void applybounds(Client *c, struct wlr_box *bbox) {
 		struct wlr_box min = {0}, max = {0};
 		client_get_size_hints(c, &max, &min);
 		/* try to set size hints */
-		c->geom.width = MAX(min.width + (2 * (int)c->bw), c->geom.width);
-		c->geom.height = MAX(min.height + (2 * (int)c->bw), c->geom.height);
+		c->geom.width = MAX(min.width, c->geom.width);
+		c->geom.height = MAX(min.height, c->geom.height);
 		/* Some clients set their max size to INT_MAX, which does not violate the
 		 * protocol but its unnecesary, as they can set their max size to zero. */
-		if (max.width > 0 && !(2 * c->bw > INT_MAX - max.width)) /* Checks for overflow */
-			c->geom.width = MIN(max.width + (2 * c->bw), c->geom.width);
-		if (max.height > 0 && !(2 * c->bw > INT_MAX - max.height)) /* Checks for overflow */
-			c->geom.height = MIN(max.height + (2 * c->bw), c->geom.height);
+		if (max.width > 0 && !(0 > INT_MAX - max.width)) /* Checks for overflow */
+			c->geom.width = MIN(max.width, c->geom.width);
+		if (max.height > 0 && !(0 > INT_MAX - max.height)) /* Checks for overflow */
+			c->geom.height = MIN(max.height, c->geom.height);
 	}
 
 	if (c->geom.x >= bbox->x + bbox->width)
 		c->geom.x = bbox->x + bbox->width - c->geom.width;
 	if (c->geom.y >= bbox->y + bbox->height)
 		c->geom.y = bbox->y + bbox->height - c->geom.height;
-	if (c->geom.x + c->geom.width + 2 * c->bw <= bbox->x)
+	if (c->geom.x + c->geom.width <= bbox->x)
 		c->geom.x = bbox->x;
-	if (c->geom.y + c->geom.height + 2 * c->bw <= bbox->y)
+	if (c->geom.y + c->geom.height <= bbox->y)
 		c->geom.y = bbox->y;
 }
 
@@ -672,8 +671,8 @@ void commitnotify(struct wl_listener *listener, void *data) {
 	struct wlr_box box = {0};
 	client_get_geometry(c, &box);
 
-	if (c->mon && !wlr_box_empty(&box) && (box.width != c->geom.width - 2 * c->bw
-			|| box.height != c->geom.height - 2 * c->bw))
+	if (c->mon && !wlr_box_empty(&box) && (box.width != c->geom.width
+			|| box.height != c->geom.height))
 		c->isfloating ? resize(c, c->geom, 1) : arrange(c->mon);
 
 	/* mark a pending resize as completed */
@@ -893,7 +892,6 @@ void createnotify(struct wl_listener *listener, void *data) {
 	/* Allocate a Client for this surface */
 	c = xdg_surface->data = ecalloc(1, sizeof(*c));
 	c->xdg_surface = xdg_surface;
-	c->bw = borderpx;
 
 	LISTEN(&xdg_surface->events.map, &c->map, mapnotify);
 	LISTEN(&xdg_surface->events.unmap, &c->unmap, unmapnotify);
@@ -1351,8 +1349,8 @@ void mapnotify(struct wl_listener *listener, void *data) {
 		client_get_geometry(c, &c->geom);
 		/* Unmanaged clients always are floating */
 		wlr_scene_node_reparent(&c->scene->node, layers[LyrFloat]);
-		wlr_scene_node_set_position(&c->scene->node, c->geom.x + borderpx,
-			c->geom.y + borderpx);
+		wlr_scene_node_set_position(&c->scene->node, c->geom.x,
+			c->geom.y);
 		if (client_wants_focus(c)) {
 			focusclient(c, 1);
 			exclusive_focus = c;
@@ -1363,8 +1361,6 @@ void mapnotify(struct wl_listener *listener, void *data) {
 	/* Initialize client geometry with room for border */
 	client_set_tiled(c, WLR_EDGE_TOP | WLR_EDGE_BOTTOM | WLR_EDGE_LEFT | WLR_EDGE_RIGHT);
 	client_get_geometry(c, &c->geom);
-	c->geom.width += 2 * c->bw;
-	c->geom.height += 2 * c->bw;
 
 	/* Insert this client into client lists. */
 	wl_list_insert(&clients, &c->link);
@@ -1696,11 +1692,11 @@ void resize(Client *c, struct wlr_box geo, int interact) {
 
 	/* Update scene-graph */
 	wlr_scene_node_set_position(&c->scene->node, c->geom.x, c->geom.y);
-	wlr_scene_node_set_position(&c->scene_surface->node, c->bw, c->bw);
+	wlr_scene_node_set_position(&c->scene_surface->node, 0, 0);
 
 	/* this is a no-op if size hasn't changed */
-	c->resize = client_set_size(c, c->geom.width - 2 * c->bw,
-			c->geom.height - 2 * c->bw);
+	c->resize = client_set_size(c, c->geom.width,
+			c->geom.height);
 }
 
 void run(char *startup_cmd) {
@@ -1787,7 +1783,6 @@ void setfullscreen(Client *c, int fullscreen) {
 	c->isfullscreen = fullscreen;
 	if (!c->mon)
 		return;
-	c->bw = fullscreen ? 0 : borderpx;
 	client_set_fullscreen(c, fullscreen);
 	wlr_scene_node_reparent(&c->scene->node, layers[fullscreen
 			? LyrFS : c->isfloating ? LyrFloat : LyrTile]);

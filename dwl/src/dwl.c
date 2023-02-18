@@ -89,7 +89,7 @@ typedef struct Monitor Monitor;
 typedef struct {
 	/* Must keep these three elements in this order */
 	unsigned int type; /* XDGShell or X11 */
-	struct wlr_box geom;  /* layout-relative, includes border */
+	struct wlr_box geom; /* layout-relative, includes border */
 	Monitor *mon;
 	struct wlr_scene_tree *scene;
 	struct wlr_scene_tree *scene_surface;
@@ -106,7 +106,7 @@ typedef struct {
 	struct wl_listener destroy;
 	struct wl_listener set_title;
 	struct wl_listener fullscreen;
-	struct wlr_box prev;  /* layout-relative, includes border */
+	struct wlr_box prev; /* layout-relative, includes border */
 	unsigned int bw;
 	unsigned int tags;
 	int isfloating, isurgent, isfullscreen;
@@ -166,8 +166,8 @@ struct Monitor {
 	struct wl_listener destroy;
 	struct wl_listener destroy_lock_surface;
 	struct wlr_session_lock_surface_v1 *lock_surface;
-	struct wlr_box m;      /* monitor area, layout-relative */
-	struct wlr_box w;      /* window area, layout-relative */
+	struct wlr_box m; /* monitor area, layout-relative */
+	struct wlr_box w; /* window area, layout-relative */
 	struct wl_list layers[4]; /* LayerSurface::link */
 	const Layout *lt[2];
 	unsigned int seltags;
@@ -206,7 +206,6 @@ typedef struct {
 
 /* function declarations */
 static void applybounds(Client *c, struct wlr_box *bbox);
-static void applyrules(Client *c);
 static void arrange(Monitor *m);
 static void arrangelayer(Monitor *m, struct wl_list *list,
 		struct wlr_box *usable_area, int exclusive);
@@ -319,7 +318,7 @@ static struct wlr_xdg_shell *xdg_shell;
 static struct wlr_xdg_activation_v1 *activation;
 static struct wlr_xdg_decoration_manager_v1 *xdg_decoration_mgr;
 static struct wl_list clients; /* tiling order */
-static struct wl_list fstack;  /* focus order */
+static struct wl_list fstack; /* focus order */
 static struct wlr_idle *idle;
 static struct wlr_idle_notifier_v1 *idle_notifier;
 static struct wlr_idle_inhibit_manager_v1 *idle_inhibit_mgr;
@@ -390,8 +389,8 @@ void applybounds(Client *c, struct wlr_box *bbox) {
 		/* try to set size hints */
 		c->geom.width = MAX(min.width + (2 * (int)c->bw), c->geom.width);
 		c->geom.height = MAX(min.height + (2 * (int)c->bw), c->geom.height);
-		/* Some clients set them max size to INT_MAX, which does not violates
-		 * the protocol but its innecesary, they can set them max size to zero. */
+		/* Some clients set their max size to INT_MAX, which does not violate the
+		 * protocol but its unnecesary, as they can set their max size to zero. */
 		if (max.width > 0 && !(2 * c->bw > INT_MAX - max.width)) /* Checks for overflow */
 			c->geom.width = MIN(max.width + (2 * c->bw), c->geom.width);
 		if (max.height > 0 && !(2 * c->bw > INT_MAX - max.height)) /* Checks for overflow */
@@ -406,34 +405,6 @@ void applybounds(Client *c, struct wlr_box *bbox) {
 		c->geom.x = bbox->x;
 	if (c->geom.y + c->geom.height + 2 * c->bw <= bbox->y)
 		c->geom.y = bbox->y;
-}
-
-void applyrules(Client *c) {
-	/* rule matching */
-	const char *appid, *title;
-	unsigned int i, newtags = 0;
-	const Rule *r;
-	Monitor *mon = selmon, *m;
-
-	c->isfloating = client_is_float_type(c);
-	if (!(appid = client_get_appid(c)))
-		appid = "AppID_not_specified";
-	if (!(title = client_get_title(c)))
-		title = "Title_not_specified";
-
-	for (r = rules; r < END(rules); r++) {
-		if ((!r->title || strstr(title, r->title))
-				&& (!r->id || strstr(appid, r->id))) {
-			c->isfloating = r->isfloating;
-			newtags |= r->tags;
-			i = 0;
-			wl_list_for_each(m, &mons, link)
-				if (r->monitor == i++)
-					mon = m;
-		}
-	}
-	wlr_scene_node_reparent(&c->scene->node, layers[c->isfloating ? LyrFloat : LyrTile]);
-	setmon(c, mon, newtags);
 }
 
 void arrange(Monitor *m) {
@@ -546,8 +517,7 @@ void buttonpress(struct wl_listener *listener, void *data) {
 		keyboard = wlr_seat_get_keyboard(seat);
 		mods = keyboard ? wlr_keyboard_get_modifiers(keyboard) : 0;
 		for (b = buttons; b < END(buttons); b++) {
-			if (CLEANMASK(mods) == CLEANMASK(b->mod) &&
-					event->button == b->button && b->func) {
+			if (CLEANMASK(mods) == CLEANMASK(b->mod) && event->button == b->button && b->func) {
 				b->func(&b->arg);
 				return;
 			}
@@ -940,7 +910,7 @@ void createnotify(struct wl_listener *listener, void *data) {
 
 void createpointer(struct wlr_pointer *pointer) {
 	if (wlr_input_device_is_libinput(&pointer->base)) {
-		struct libinput_device *libinput_device =  (struct libinput_device*)
+		struct libinput_device *libinput_device = (struct libinput_device*)
 			wlr_libinput_get_device_handle(&pointer->base);
 
 		if (libinput_device_config_tap_get_finger_count(libinput_device)) {
@@ -1166,16 +1136,16 @@ void focusstack(const Arg *arg) {
 	if (arg->i > 0) {
 		wl_list_for_each(c, &sel->link, link) {
 			if (&c->link == &clients)
-				continue;  /* wrap past the sentinel node */
+				continue; /* wrap past the sentinel node */
 			if (VISIBLEON(c, selmon))
-				break;  /* found it */
+				break; /* found it */
 		}
 	} else {
 		wl_list_for_each_reverse(c, &sel->link, link) {
 			if (&c->link == &clients)
-				continue;  /* wrap past the sentinel node */
+				continue; /* wrap past the sentinel node */
 			if (VISIBLEON(c, selmon))
-				break;  /* found it */
+				break; /* found it */
 		}
 	}
 	/* If only one client is visible on selmon, then c == sel */
@@ -1409,12 +1379,14 @@ void mapnotify(struct wl_listener *listener, void *data) {
 	 * we set the same tags and monitor than its parent, if not
 	 * try to apply rules for them */
 	 /* TODO: https://github.com/djpohly/dwl/pull/334#issuecomment-1330166324 */
-	if ((c->type == XDGShell && p = client_get_parent(c))) {
+	if (c->type == XDGShell && (p = client_get_parent(c))) {
 		c->isfloating = 1;
 		wlr_scene_node_reparent(&c->scene->node, layers[LyrFloat]);
 		setmon(c, p->mon, p->tags);
 	} else {
-		applyrules(c);
+		c->isfloating = client_is_float_type(c);
+		setmon(c, selmon, 0);
+		wlr_scene_node_reparent(&c->scene->node, layers[c->isfloating ? LyrFloat : LyrTile]);
 	}
 	printstatus();
 
@@ -1562,7 +1534,7 @@ void outputmgrapply(struct wl_listener *listener, void *data) {
 void outputmgrapplyortest(struct wlr_output_configuration_v1 *config, int test) {
 	/*
 	 * Called when a client such as wlr-randr requests a change in output
-	 * configuration.  This is only one way that the layout can be changed,
+	 * configuration. This is only one way that the layout can be changed,
 	 * so any Monitor information should be updated by updatemons() after an
 	 * output_layout.change event, not here.
 	 */
@@ -1661,8 +1633,8 @@ void printstatus(void) {
 		if ((c = focustop(m))) {
 			title = client_get_title(c);
 			appid = client_get_appid(c);
-			printf("%s title %s\n", m->wlr_output->name, title); // TODO: check this code works
-			printf("%s appid %s\n", m->wlr_output->name, appid); // TODO: check this code works
+			printf("%s title %s\n", m->wlr_output->name, title);
+			printf("%s appid %s\n", m->wlr_output->name, appid);
 			printf("%s fullscreen %u\n", m->wlr_output->name, c->isfullscreen);
 			printf("%s floating %u\n", m->wlr_output->name, c->isfloating);
 			sel = c->tags;
@@ -1726,7 +1698,7 @@ void resize(Client *c, struct wlr_box geo, int interact) {
 	c->geom = geo;
 	applybounds(c, bbox);
 
-	/* Update scene-graph, including borders */
+	/* Update scene-graph */
 	wlr_scene_node_set_position(&c->scene->node, c->geom.x, c->geom.y);
 	wlr_scene_node_set_position(&c->scene_surface->node, c->bw, c->bw);
 
@@ -1776,7 +1748,7 @@ void run(char *startup_cmd) {
 	selmon = xytomon(cursor->x, cursor->y);
 
 	/* TODO hack to get cursor to display in its initial location (100, 100)
-	 * instead of (0, 0) and then jumping.  still may not be fully
+	 * instead of (0, 0) and then jumping. still may not be fully
 	 * initialized, as the image/coordinates are not transformed for the
 	 * monitor when displayed here */
 	wlr_cursor_warp_closest(cursor, NULL, cursor->x, cursor->y);
@@ -2229,7 +2201,7 @@ void unmapnotify(struct wl_listener *listener, void *data) {
 void updatemons(struct wl_listener *listener, void *data) {
 	/*
 	 * Called whenever the output layout changes: adding or removing a
-	 * monitor, changing an output's mode or position, etc.  This is where
+	 * monitor, changing an output's mode or position, etc. This is where
 	 * the change officially happens and we update geometry, window
 	 * positions, focus, and the stored configuration in wlroots'
 	 * output-manager implementation.

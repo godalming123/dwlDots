@@ -7,14 +7,6 @@ static const float fullscreen_bg[]         = {0.18, 0.2, 0.25, 1.0};
 /* tagging */
 static const char *tags[] = { "1", "2", "3", "4", "5"};
 
-/* WINDOW RULES */
-static const Rule rules[0] = {
-	/* app_id     title       tags mask     isfloating   monitor */
-	/* examples:
-	{ "Gimp",     NULL,       0,            1,           -1 },
-	*/
-};
-
 /* LAYOUTS */
 static const Layout layouts[] = {
 	/* symbol     arrange function */

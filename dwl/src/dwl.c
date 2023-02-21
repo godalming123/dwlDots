@@ -1247,7 +1247,7 @@ void keypress(struct wl_listener *listener, void *data) {
 			if (mods == WLR_MODIFIER_ALT && syms[0] == 65513) {
 				if (!ignoreNextKeyrelease) {
 					if (fork() == 0) {
-						system("tofi-drun --drun-launch=true");
+						system(menucmd);
 						exit(EXIT_SUCCESS);
 					}
 				}
@@ -1345,7 +1345,6 @@ void mapnotify(struct wl_listener *listener, void *data) {
 	/* Called when the surface is mapped, or ready to display on-screen. */
 	Client *p, *w, *c = wl_container_of(listener, c, map);
 	Monitor *m;
-	int i;
 
 	/* Create scene tree for this client and its border */
 	c->scene = wlr_scene_tree_create(layers[LyrTile]);

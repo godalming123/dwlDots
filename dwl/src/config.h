@@ -88,60 +88,55 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 
 /* commands */
 static const char *termcmd[] = { "wayst", NULL };
-static const char *menucmd[] = {
-	"tofi-drun",
-	"--drun-launch=true",
+static const char *menucmd =
+	"tofi-drun "
+	"--drun-launch=true "
 
 	// size
-	"--width=100%",
-	"--height=25",
+	"--width=100% "
+	"--height=25 "
 
 	// position
-	"--anchor=bottom",
+	"--anchor=bottom "
 
 	// margins
-	"--margin-left=0",
-	"--margin-right=0",
-	"--margin-top=0",
-	"--margin-bottom=0",
+	"--margin-left=0 "
+	"--margin-right=0 "
+	"--margin-top=0 "
+	"--margin-bottom=0 "
 
 	// padding
-	"--selection-padding=10",
-	"--padding-left=10",
-	"--padding-right=10",
-	"--padding-top=3",
-	"--padding-bottom=3",
+	"--selection-padding=10 "
+	"--padding-left=10 "
+	"--padding-right=10 "
+	"--padding-top=3 "
+	"--padding-bottom=3 "
 
 	// colors
-	"--text-color=#FFFFFF",
-	"--selection-color=#000000",
-	"--background-color=#2e3440",
-	"--selection-background=#88c0d0",
+	"--text-color=#FFFFFF "
+	"--selection-color=#000000 "
+	"--background-color=#2e3440 "
+	"--selection-background=#88c0d0 "
 
 	// results
-	"--result-spacing=20",
-	"--num-results=12",
+	"--result-spacing=20 "
+	"--num-results=12 "
 
 	// styling
-	"--border-width=0",
-	"--outline-width=0",
-	"--font=monospace",
-	"--corner-radius=0",
-	"--selection-background-corner-radius=6",
-	"--font=/usr/share/fonts/TTF/LiberationSans-Regular.ttf",
+	"--border-width=0 "
+	"--outline-width=0 "
+	"--corner-radius=0 "
+	"--selection-background-corner-radius=6 "
 
 	// other options
-	"--terminal=wayst",
-	"--prompt-text= > ",
-	"--horizontal=true",
-	"--font-size=12",
-	NULL
-};
+	"--terminal=wayst "
+	"--prompt-text=' > ' "
+	"--horizontal=true "
+	"--font-size=12";
 
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: c -> C, 2 -> quotedbl, etc. */
 	/* modifier                  key                            function          argument */
-	{ MODKEY,                    XKB_KEY_p,                     spawn,            {.v = menucmd} },
 	{ MODKEY,                    XKB_KEY_Return,                spawn,            {.v = termcmd} },
 	{ MODKEY,                    XKB_KEY_q,                     killclient,       {0} },
 	{ MODKEY,                    XKB_KEY_d,                     focusstack,       {.i = +1} },

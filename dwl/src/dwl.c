@@ -298,6 +298,7 @@ static struct wlr_scene_node *xytonode(double x, double y, struct wlr_surface **
 		Client **pc, LayerSurface **pl, double *nx, double *ny);
 
 /* variables */
+static bool ignoreNextKeyrelease = false;
 static const char *cursor_image = "left_ptr";
 static pid_t child_pid = -1;
 static int locked;
@@ -1215,30 +1216,49 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 	return handled;
 }
 
+// This event is raised when a key is pressed or released.
 void keypress(struct wl_listener *listener, void *data) {
-	int i;
-	/* This event is raised when a key is pressed or released. */
 	Keyboard *kb = wl_container_of(listener, kb, key);
 	struct wlr_keyboard_key_event *event = data;
 
-	/* Translate libinput keycode -> xkbcommon */
+	// Translate libinput keycode -> xkbcommon */
 	uint32_t keycode = event->keycode + 8;
-	/* Get a list of keysyms based on the keymap for this keyboard */
+	// Get a list of keysyms based on the keymap for this keyboard */
 	const xkb_keysym_t *syms;
-	int nsyms = xkb_state_key_get_syms(
-			kb->wlr_keyboard->xkb_state, keycode, &syms);
-
-	int handled = 0;
+	int nsyms = xkb_state_key_get_syms(kb->wlr_keyboard->xkb_state, keycode, &syms);
+	// get a list of mods pressed
 	uint32_t mods = wlr_keyboard_get_modifiers(kb->wlr_keyboard);
-
+	
+	// notify of idle activity
 	IDLE_NOTIFY_ACTIVITY;
 
 	/* On _press_ if there is no active screen locker,
 	 * attempt to process a compositor keybinding. */
-	if (!locked && !input_inhibit_mgr->active_inhibitor
-			&& event->state == WL_KEYBOARD_KEY_STATE_PRESSED)
-		for (i = 0; i < nsyms; i++)
-			handled = keybinding(mods, syms[i]) || handled;
+	int handled = 0;
+	if (!locked && !input_inhibit_mgr->active_inhibitor) {
+		if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+			if (mods == WLR_MODIFIER_ALT && keycode != 64 && syms[0] == 65513)
+				ignoreNextKeyrelease = true;
+			
+			for (int i = 0; i < nsyms; i++)
+				handled = keybinding(mods, syms[i]) || handled;
+		}
+		else if (event->state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+			if (mods == WLR_MODIFIER_ALT && syms[0] == 65513) {
+				if (!ignoreNextKeyrelease) {
+					if (fork() == 0) {
+						system("tofi-drun --drun-launch=true");
+						exit(EXIT_SUCCESS);
+					}
+				}
+				handled = 1;
+				ignoreNextKeyrelease = false;
+			}
+			else {
+				ignoreNextKeyrelease = true;
+			}
+		}
+	}
 
 	if (handled && kb->wlr_keyboard->repeat_info.delay > 0) {
 		kb->mods = mods;

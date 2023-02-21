@@ -1237,7 +1237,7 @@ void keypress(struct wl_listener *listener, void *data) {
 	int handled = 0;
 	if (!locked && !input_inhibit_mgr->active_inhibitor) {
 		if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-			if (mods == WLR_MODIFIER_ALT && keycode != 64 && syms[0] == 65513)
+			if (mods == WLR_MODIFIER_ALT && keycode != 64)
 				ignoreNextKeyrelease = true;
 			
 			for (int i = 0; i < nsyms; i++)
@@ -1253,9 +1253,6 @@ void keypress(struct wl_listener *listener, void *data) {
 				}
 				handled = 1;
 				ignoreNextKeyrelease = false;
-			}
-			else {
-				ignoreNextKeyrelease = true;
 			}
 		}
 	}

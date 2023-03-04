@@ -15,8 +15,8 @@ static const Layout layouts[] = {
 
 /* MONITORS */
 static const MonitorRule monrules[] = {
-	/* name       mfact nmaster scale layout       rotate/reflect */
-	{ "eDP-1",    0.5,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL },
+	/* name    mfact nmaster scale layout       rotate/reflect              x  y */
+	{ "eDP-1", 0.5,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL, 0, 0},
 };
 
 /* KEYBOARD */

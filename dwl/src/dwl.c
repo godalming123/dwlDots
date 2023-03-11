@@ -68,7 +68,7 @@
 
 /* enums */
 enum { CurNormal, CurPressed, CurMove, CurResize }; /* cursor */
-enum { XDGShell, LayerShell, X11Managed, X11Unmanaged }; /* client types */
+enum { XDGShell, LayerShell }; /* client types */
 enum { LyrBg, LyrBottom, LyrTop, LyrOverlay, LyrTile, LyrFloat, LyrFS, LyrDragIcon, LyrBlock, NUM_LAYERS }; /* scene layers */
 
 typedef union {
@@ -88,7 +88,7 @@ typedef struct {
 typedef struct Monitor Monitor;
 typedef struct {
 	/* Must keep these three elements in this order */
-	unsigned int type; /* XDGShell or X11 */
+	unsigned int type; /* XDGShell or LayerShell */
 	struct wlr_box geom; /* layout-relative, includes border */
 	Monitor *mon;
 	struct wlr_scene_tree *scene;
@@ -108,13 +108,6 @@ typedef struct {
 	int isfloating, isurgent, isfullscreen;
 	uint32_t resize; /* configure serial of a pending resize */
 } Client;
-
-typedef struct {
-	uint32_t mod;
-	xkb_keysym_t keysym;
-	void (*func)(const Arg *);
-	const Arg arg;
-} Key;
 
 typedef struct {
 	struct wl_list link;
@@ -208,7 +201,7 @@ static void arrangelayer(Monitor *m, struct wl_list *list,
 static void arrangelayers(Monitor *m);
 static void axisnotify(struct wl_listener *listener, void *data);
 static void buttonpress(struct wl_listener *listener, void *data);
-static void chvt(const Arg *arg);
+static void chvt(unsigned int vt);
 static void checkidleinhibitor(struct wlr_surface *exclude);
 static void cleanup(void);
 static void cleanupkeyboard(struct wl_listener *listener, void *data);
@@ -235,17 +228,17 @@ static void destroysessionlock(struct wl_listener *listener, void *data);
 static void destroysessionmgr(struct wl_listener *listener, void *data);
 static Monitor *dirtomon(enum wlr_direction dir);
 static void focusclient(Client *c, int lift);
-static void focusmon(const Arg *arg);
-static void focusstack(const Arg *arg);
+static void focusmon(int mon);
+static void focusstack(int relativeWindow);
 static Client *focustop(Monitor *m);
 static void fullscreennotify(struct wl_listener *listener, void *data);
-static void incnmaster(const Arg *arg);
+static void incnmaster(int num);
 static void inputdevice(struct wl_listener *listener, void *data);
 static int keybinding(uint32_t mods, xkb_keysym_t sym);
 static void keypress(struct wl_listener *listener, void *data);
 static void keypressmod(struct wl_listener *listener, void *data);
 static int keyrepeat(void *data);
-static void killclient(const Arg *arg);
+static void killclient(void);
 static void locksession(struct wl_listener *listener, void *data);
 static void maplayersurfacenotify(struct wl_listener *listener, void *data);
 static void mapnotify(struct wl_listener *listener, void *data);
@@ -261,16 +254,16 @@ static void outputmgrtest(struct wl_listener *listener, void *data);
 static void pointerfocus(Client *c, struct wlr_surface *surface,
 		double sx, double sy, uint32_t time);
 static void printstatus(void);
-static void quit(const Arg *arg);
+static void quit(void);
 static void quitsignal(int signo);
 static void rendermon(struct wl_listener *listener, void *data);
 static void requeststartdrag(struct wl_listener *listener, void *data);
 static void resize(Client *c, struct wlr_box geo, int interact);
-static void run(char *startup_cmd);
+static void rundwl(void);
 static void setcursor(struct wl_listener *listener, void *data);
 static void setfloating(Client *c, int floating);
 static void setfullscreen(Client *c, int fullscreen);
-static void setlayout(const Arg *arg);
+static void setlayout(Layout newLayout);
 static void setmfact(const Arg *arg);
 static void setmon(Client *c, Monitor *m, unsigned int newtags);
 static void setpsel(struct wl_listener *listener, void *data);
@@ -544,8 +537,8 @@ void buttonpress(struct wl_listener *listener, void *data) {
 			event->time_msec, event->button, event->state);
 }
 
-void chvt(const Arg *arg) {
-	wlr_session_change_vt(wlr_backend_get_session(backend), arg->ui);
+void chvt(unsigned int vt) {
+	wlr_session_change_vt(wlr_backend_get_session(backend), vt);
 }
 
 void checkidleinhibitor(struct wlr_surface *exclude) {
@@ -1114,21 +1107,21 @@ void focusclient(Client *c, int lift) {
 	client_activate_surface(client_surface(c), 1);
 }
 
-void focusmon(const Arg *arg) {
+void focusmon(int mon) {
 	int i = 0, nmons = wl_list_length(&mons);
 	if (nmons)
 		do /* don't switch to disabled mons */
-			selmon = dirtomon(arg->i);
+			selmon = dirtomon(mon);
 		while (!selmon->wlr_output->enabled && i++ < nmons);
 	focusclient(focustop(selmon), 1);
 }
 
-void focusstack(const Arg *arg) {
+void focusstack(int relativeWindow) {
 	/* Focus the next or previous client (in tiling order) on selmon */
 	Client *c, *sel = focustop(selmon);
 	if (!sel || sel->isfullscreen)
 		return;
-	if (arg->i > 0) {
+	if (relativeWindow > 0) {
 		wl_list_for_each(c, &sel->link, link) {
 			if (&c->link == &clients)
 				continue; /* wrap past the sentinel node */
@@ -1147,9 +1140,7 @@ void focusstack(const Arg *arg) {
 	focusclient(c, 1);
 }
 
-/* We probably should change the name of this, it sounds like
- * will focus the topmost client of this mon, when actually will
- * only return that client */
+// returns the client that is topmost for a given monitor
 Client * focustop(Monitor *m) {
 	Client *c;
 	wl_list_for_each(c, &fstack, flink)
@@ -1163,10 +1154,10 @@ void fullscreennotify(struct wl_listener *listener, void *data) {
 	setfullscreen(c, client_wants_fullscreen(c));
 }
 
-void incnmaster(const Arg *arg) {
-	if (!arg || !selmon)
+void incnmaster(int num) {
+	if (!num || !selmon)
 		return;
-	selmon->nmaster = MAX(selmon->nmaster + arg->i, 0);
+	selmon->nmaster = MAX(selmon->nmaster + num, 0);
 	arrange(selmon);
 }
 
@@ -1198,24 +1189,6 @@ void inputdevice(struct wl_listener *listener, void *data) {
 	wlr_seat_set_capabilities(seat, caps);
 }
 
-int keybinding(uint32_t mods, xkb_keysym_t sym) {
-	/*
-	 * Here we handle compositor keybindings. This is when the compositor is
-	 * processing keys, rather than passing them on to the client for its own
-	 * processing.
-	 */
-	int handled = 0;
-	const Key *k;
-	for (k = keys; k < END(keys); k++) {
-		if (CLEANMASK(mods) == CLEANMASK(k->mod) &&
-				sym == k->keysym && k->func) {
-			k->func(&k->arg);
-			handled = 1;
-		}
-	}
-	return handled;
-}
-
 // This event is raised when a key is pressed or released.
 void keypress(struct wl_listener *listener, void *data) {
 	Keyboard *kb = wl_container_of(listener, kb, key);
@@ -1237,11 +1210,13 @@ void keypress(struct wl_listener *listener, void *data) {
 	int handled = 0;
 	if (!locked && !input_inhibit_mgr->active_inhibitor) {
 		if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+			// if the alt modifier is being held and you press a key that is not alt
 			if (mods == WLR_MODIFIER_ALT && keycode != 64)
+				// then we need to ignore the next keyrelease
 				ignoreNextKeyrelease = true;
 			
-			for (int i = 0; i < nsyms; i++)
-				handled = keybinding(mods, syms[i]) || handled;
+			// now handle the keypress
+			handled = keybinding(mods, syms[nsyms-1]);
 		}
 		else if (event->state == WL_KEYBOARD_KEY_STATE_RELEASED) {
 			if (mods == WLR_MODIFIER_ALT && syms[0] == 65513) {
@@ -1256,13 +1231,12 @@ void keypress(struct wl_listener *listener, void *data) {
 			}
 		}
 	}
-
+	
 	if (handled && kb->wlr_keyboard->repeat_info.delay > 0) {
 		kb->mods = mods;
 		kb->keysyms = syms;
 		kb->nsyms = nsyms;
-		wl_event_source_timer_update(kb->key_repeat_source,
-				kb->wlr_keyboard->repeat_info.delay);
+		wl_event_source_timer_update(kb->key_repeat_source, kb->wlr_keyboard->repeat_info.delay);
 	} else {
 		kb->nsyms = 0;
 		wl_event_source_timer_update(kb->key_repeat_source, 0);
@@ -1306,7 +1280,7 @@ int keyrepeat(void *data) {
 	return 0;
 }
 
-void killclient(const Arg *arg) {
+void killclient(void) {
 	Client *sel = focustop(selmon);
 	if (sel)
 		client_send_close(sel);
@@ -1662,12 +1636,12 @@ void printstatus(void) {
 	fflush(stdout);
 }
 
-void quit(const Arg *arg) {
+void quit(void) {
 	wl_display_terminate(dpy);
 }
 
 void quitsignal(int signo) {
-	quit(NULL);
+	quit();
 }
 
 void rendermon(struct wl_listener *listener, void *data) {
@@ -1715,7 +1689,7 @@ void resize(Client *c, struct wlr_box geo, int interact) {
 			c->geom.height);
 }
 
-void run(char *startup_cmd) {
+void rundwl(void) {
 	/* Add a Unix socket to the Wayland display. */
 	const char *socket = wl_display_add_socket_auto(dpy);
 	struct sigaction sa = {.sa_flags = SA_RESTART, .sa_handler = SIG_IGN};
@@ -1730,23 +1704,22 @@ void run(char *startup_cmd) {
 		die("startup: backend_start");
 
 	/* Now that the socket exists and the backend is started, run the startup command */
-	if (startup_cmd) {
-		int piperw[2];
-		if (pipe(piperw) < 0)
-			die("startup: pipe:");
-		if ((child_pid = fork()) < 0)
-			die("startup: fork:");
-		if (child_pid == 0) {
-			dup2(piperw[0], STDIN_FILENO);
-			close(piperw[0]);
-			close(piperw[1]);
-			execl("/bin/sh", "/bin/sh", "-c", startup_cmd, NULL);
-			die("startup: execl:");
-		}
-		dup2(piperw[1], STDOUT_FILENO);
-		close(piperw[1]);
+	int piperw[2];
+	if (pipe(piperw) < 0)
+		die("startup: pipe:");
+	if ((child_pid = fork()) < 0)
+		die("startup: fork:");
+	if (child_pid == 0) {
+		dup2(piperw[0], STDIN_FILENO);
 		close(piperw[0]);
+		close(piperw[1]);
+		execl("/bin/sh", "/bin/sh", "-c", "somebar", NULL);
+		die("startup: execl:");
 	}
+	dup2(piperw[1], STDOUT_FILENO);
+	close(piperw[1]);
+	close(piperw[0]);
+
 	/* If nobody is reading the status output, don't terminate */
 	sigaction(SIGPIPE, &sa, NULL);
 	printstatus();
@@ -1815,13 +1788,13 @@ void setfullscreen(Client *c, int fullscreen) {
 	printstatus();
 }
 
-void setlayout(const Arg *arg) {
+void setlayout(Layout newLayout) {
 	if (!selmon)
 		return;
-	if (!arg || !arg->v || arg->v != selmon->lt[selmon->sellt])
+	if (!newLayout || newLayout != selmon->lt[selmon->sellt])
 		selmon->sellt ^= 1;
-	if (arg && arg->v)
-		selmon->lt[selmon->sellt] = (Layout *)arg->v;
+	if (newLayout)
+		selmon->lt[selmon->sellt] = newLayout;
 	/* TODO change layout symbol? */
 	arrange(selmon);
 	printstatus();
@@ -2371,11 +2344,10 @@ int main(int argc, char *argv[]) {
 	if (!getenv("XDG_RUNTIME_DIR"))
 		die("XDG_RUNTIME_DIR must be set");
 	setup();
-	run("somebar");
+	rundwl();
 	cleanup();
 	return EXIT_SUCCESS;
 
 usage:
 	die("Usage: %s [-v] [-s startup command]", argv[0]);
 }
-

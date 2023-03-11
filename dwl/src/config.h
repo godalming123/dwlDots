@@ -9,14 +9,14 @@ static const char *tags[] = { "1", "2", "3", "4", "5"};
 /* LAYOUTS */
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "[M]",      monocle },
-	{ "[]=",      tile },
+	{ "mon",      monocle },
+	{ "tle",      tile },
 };
 
 /* MONITORS */
 static const MonitorRule monrules[] = {
-	/* name    mfact nmaster scale layout       rotate/reflect              x  y */
-	{ "eDP-1", 0.5,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL, 0, 0},
+	/* name       mfact nmaster scale layout       rotate/reflect */
+	{ "eDP-1",    0.5,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL },
 };
 
 /* KEYBOARD */
@@ -134,33 +134,61 @@ static const char *menucmd =
 	"--horizontal=true "
 	"--font-size=12";
 
-static const Key keys[] = {
-	/* Note that Shift changes certain key codes: c -> C, 2 -> quotedbl, etc. */
-	/* modifier                  key                            function          argument */
-	{ MODKEY,                    XKB_KEY_Return,                spawn,            {.v = termcmd} },
-	{ MODKEY,                    XKB_KEY_q,                     killclient,       {0} },
-	{ MODKEY,                    XKB_KEY_d,                     focusstack,       {.i = +1} },
-	{ MODKEY,                    XKB_KEY_a,                     focusstack,       {.i = -1} },
-	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_a,                     incnmaster,       {.i = +1} },
-	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,                     incnmaster,       {.i = -1} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,                     setmfact,         {.f = -0.05} },
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,                     setmfact,         {.f = +0.05} },
-	{ MODKEY,                    XKB_KEY_m,                     setlayout,        {.v = &layouts[0]} },
-	{ MODKEY,                    XKB_KEY_t,                     setlayout,        {.v = &layouts[1]} },
-	{ MODKEY,                    XKB_KEY_space,		    togglefloating,   {0} },
-	{ MODKEY,                    XKB_KEY_f,                     togglefullscreen, {0} },
-	{ MODKEY,                    XKB_KEY_Escape,                quit,             {0} },
-	TAGKEYS(                     XKB_KEY_1, XKB_KEY_exclam,                       0),
-	TAGKEYS(                     XKB_KEY_2, XKB_KEY_quotedbl,                     1),
-	TAGKEYS(                     XKB_KEY_3, XKB_KEY_sterling,                     2),
-	TAGKEYS(                     XKB_KEY_4, XKB_KEY_dollar,                       3),
-	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
+static void run(char *cmdTxt) {
+	if (fork() == 0) {
+		system(cmdTxt);
+		exit(EXIT_SUCCESS);
+	}
+}
 
-	/* Ctrl-Alt-Fx used to be handled by X server
-	   but under wayland we need to handle it */
-#define CHVT(n) { WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_XF86Switch_VT_##n, chvt, {.ui = (n)} }
-	CHVT(1), CHVT(2), CHVT(3), CHVT(4), CHVT(5), CHVT(6),
-};
+int keybinding(uint32_t mods, xkb_keysym_t sym) {
+	/*
+	 * Here we handle compositor keybindings. This is when the compositor is
+	 * processing keys, rather than passing them on to the client for its own
+	 * processing.
+	 */
+	
+	if (mods == WLR_MODIFIER_ALT) {
+		switch (sym) {
+			case XKB_KEY_Return: run("wayst");   break;
+			case XKB_KEY_q:      killclient();   break;
+			case XKB_KEY_d:      focusstack(+1); break;
+			case XKB_KEY_a:      focusstack(-1); break;
+			case XKB_KEY_Escape: quit();         break;
+			default: return 0; break;
+		}
+	}
+	else {
+		return 0;
+	}
+
+	return 1;
+}
+
+
+
+// static const Key keys[] = {
+// 	/* Note that Shift changes certain key codes: c -> C, 2 -> quotedbl, etc. */
+// 	/* modifier                  key                            function          argument */
+// 	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_a,                     incnmaster,       {.i = +1} },
+// 	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,                     incnmaster,       {.i = -1} },
+// 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,                     setmfact,         {.f = -0.05} },
+// 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,                     setmfact,         {.f = +0.05} },
+// 	{ MODKEY,                    XKB_KEY_m,                     setlayout,        {.v = &layouts[0]} },
+// 	{ MODKEY,                    XKB_KEY_t,                     setlayout,        {.v = &layouts[1]} },
+// 	{ MODKEY,                    XKB_KEY_space,		    togglefloating,   {0} },
+// 	{ MODKEY,                    XKB_KEY_f,                     togglefullscreen, {0} },
+// 	TAGKEYS(                     XKB_KEY_1, XKB_KEY_exclam,                       0),
+// 	TAGKEYS(                     XKB_KEY_2, XKB_KEY_quotedbl,                     1),
+// 	TAGKEYS(                     XKB_KEY_3, XKB_KEY_sterling,                     2),
+// 	TAGKEYS(                     XKB_KEY_4, XKB_KEY_dollar,                       3),
+// 	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
+//
+// 	/* Ctrl-Alt-Fx used to be handled by X server
+// 	   but under wayland we need to handle it */
+// #define CHVT(n) { WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_XF86Switch_VT_##n, chvt, {.ui = (n)} }
+// 	CHVT(1), CHVT(2), CHVT(3), CHVT(4), CHVT(5), CHVT(6),
+// };
 
 static const Button buttons[] = {
 	{ MODKEY, BTN_LEFT,   moveresize,       {.ui = CurMove} },

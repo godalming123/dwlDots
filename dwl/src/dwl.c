@@ -263,7 +263,7 @@ static void rundwl(void);
 static void setcursor(struct wl_listener *listener, void *data);
 static void setfloating(Client *c, int floating);
 static void setfullscreen(Client *c, int fullscreen);
-static void setlayout(Layout newLayout);
+static void setlayout(Layout * newLayout);
 static void setmfact(const Arg *arg);
 static void setmon(Client *c, Monitor *m, unsigned int newtags);
 static void setpsel(struct wl_listener *listener, void *data);
@@ -1788,7 +1788,7 @@ void setfullscreen(Client *c, int fullscreen) {
 	printstatus();
 }
 
-void setlayout(Layout newLayout) {
+void setlayout(Layout * newLayout) {
 	if (!selmon)
 		return;
 	if (!newLayout || newLayout != selmon->lt[selmon->sellt])

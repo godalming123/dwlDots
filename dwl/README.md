@@ -2,7 +2,9 @@
 
 ## Building
 
-Dwl has only two dependencies: `wlroots` and `wayland-protocols`. 
+Dwl has only two dependencies: `wlroots` and `wayland-protocols`.
+You also need a c compiler normally thic is called `gcc`.
+As well as `make` and `pkg-config` to build dwl.
 
 Simply install these (and their `-devel` versions if your distro has separate
 development packages) and run `make` from the `src/` directry. If you wish to
@@ -10,7 +12,11 @@ build against a Git version of wlroots, check out the [wlroots-next branch].
 
 EG for void linux:
 ```
-sudo xbps-install -S wlroots-devel wayland-devel
+sudo xbps-install -S wlroots-devel pkg-config make gcc
+```
+And if you have an AMD card on void you also need this
+```
+sudo xbps-install mesa-dri
 ```
 
 ## Running dwl

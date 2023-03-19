@@ -15,8 +15,8 @@ static const Layout layouts[] = {
 
 /* MONITORS */
 static const MonitorRule monrules[] = {
-	/* name       mfact nmaster scale layout       rotate/reflect */
-	{ "eDP-1",    0.5,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL },
+	/* name       mfact nmaster scale layout       rotate/reflect              X  Y*/
+	{ NULL,       0.5,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL, 0, 0 },
 };
 
 /* KEYBOARD */
@@ -87,7 +87,6 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* commands */
-static const char *termcmd[] = { "wayst", NULL };
 static const char *menucmd =
 	"tofi-drun "
 	"--drun-launch=true "
@@ -129,7 +128,7 @@ static const char *menucmd =
 	"--selection-background-corner-radius=6 "
 
 	// other options
-	"--terminal=wayst "
+	"--terminal=alcritty "
 	"--prompt-text=' > ' "
 	"--horizontal=true "
 	"--font-size=12";
@@ -150,11 +149,24 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 	
 	if (mods == WLR_MODIFIER_ALT) {
 		switch (sym) {
-			case XKB_KEY_Return: run("wayst");   break;
+			case XKB_KEY_Return: run("alacritty");   break;
 			case XKB_KEY_q:      killclient();   break;
 			case XKB_KEY_d:      focusstack(+1); break;
 			case XKB_KEY_a:      focusstack(-1); break;
 			case XKB_KEY_Escape: quit();         break;
+			default: return 0; break;
+		}
+	}
+	else if (mods == WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT) {
+		// under wayland we must handle virtual terminals ourselfs here I only
+		// have 6 because I use runnit and that only has 6 virtual terminals
+		switch (sym) {
+			case XKB_KEY_XF86Switch_VT_1: chvt(1); break;
+			case XKB_KEY_XF86Switch_VT_2: chvt(2); break;
+			case XKB_KEY_XF86Switch_VT_3: chvt(3); break;
+			case XKB_KEY_XF86Switch_VT_4: chvt(4); break;
+			case XKB_KEY_XF86Switch_VT_5: chvt(5); break;
+			case XKB_KEY_XF86Switch_VT_6: chvt(6); break;
 			default: return 0; break;
 		}
 	}
@@ -164,8 +176,6 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 
 	return 1;
 }
-
-
 
 // static const Key keys[] = {
 // 	/* Note that Shift changes certain key codes: c -> C, 2 -> quotedbl, etc. */
@@ -183,12 +193,7 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 // 	TAGKEYS(                     XKB_KEY_3, XKB_KEY_sterling,                     2),
 // 	TAGKEYS(                     XKB_KEY_4, XKB_KEY_dollar,                       3),
 // 	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
-//
-// 	/* Ctrl-Alt-Fx used to be handled by X server
-// 	   but under wayland we need to handle it */
-// #define CHVT(n) { WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_XF86Switch_VT_##n, chvt, {.ui = (n)} }
-// 	CHVT(1), CHVT(2), CHVT(3), CHVT(4), CHVT(5), CHVT(6),
-// };
+};
 
 static const Button buttons[] = {
 	{ MODKEY, BTN_LEFT,   moveresize,       {.ui = CurMove} },

@@ -263,7 +263,7 @@ static void rundwl(void);
 static void setcursor(struct wl_listener *listener, void *data);
 static void setfloating(Client *c, int floating);
 static void setfullscreen(Client *c, int fullscreen);
-static void setlayout(Layout * newLayout);
+static void setlayout(const Layout *newLayout);
 static void setmfact(const Arg *arg);
 static void setmon(Client *c, Monitor *m, unsigned int newtags);
 static void setpsel(struct wl_listener *listener, void *data);
@@ -274,8 +274,8 @@ static void startdrag(struct wl_listener *listener, void *data);
 static void tag(const Arg *arg);
 static void tagmon(const Arg *arg);
 static void tile(Monitor *m);
-static void togglefloating(const Arg *arg);
-static void togglefullscreen(const Arg *arg);
+static void togglefloating(void);
+static void togglefullscreen(void);
 static void toggletag(const Arg *arg);
 static void toggleview(const Arg *arg);
 static void unlocksession(struct wl_listener *listener, void *data);
@@ -1788,7 +1788,7 @@ void setfullscreen(Client *c, int fullscreen) {
 	printstatus();
 }
 
-void setlayout(Layout * newLayout) {
+void setlayout(const Layout *newLayout) {
 	if (!selmon)
 		return;
 	if (!newLayout || newLayout != selmon->lt[selmon->sellt])
@@ -2094,14 +2094,14 @@ void tile(Monitor *m) {
 	}
 }
 
-void togglefloating(const Arg *arg) {
+void togglefloating(void) {
 	Client *sel = focustop(selmon);
 	/* return if fullscreen */
 	if (sel && !sel->isfullscreen)
 		setfloating(sel, !sel->isfloating);
 }
 
-void togglefullscreen(const Arg *arg) {
+void togglefullscreen(void) {
 	Client *sel = focustop(selmon);
 	if (sel)
 		setfullscreen(sel, !sel->isfullscreen);

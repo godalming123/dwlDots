@@ -83,9 +83,6 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 	{ MODKEY|WLR_MODIFIER_SHIFT,                   SKEY,           tag,             {.ui = 1 << TAG} }, \
 	{ MODKEY|WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT, SKEY,           toggletag,       {.ui = 1 << TAG} }
 
-/* helper for spawning shell commands in the pre dwm-5.0 fashion */
-#define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
-
 /* commands */
 static const char *menucmd =
 	"tofi-drun "
@@ -149,11 +146,15 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 	
 	if (mods == WLR_MODIFIER_ALT) {
 		switch (sym) {
-			case XKB_KEY_Return: run("alacritty");   break;
-			case XKB_KEY_q:      killclient();   break;
-			case XKB_KEY_d:      focusstack(+1); break;
-			case XKB_KEY_a:      focusstack(-1); break;
-			case XKB_KEY_Escape: quit();         break;
+			case XKB_KEY_Return: run("alacritty");       break;
+			case XKB_KEY_q:      killclient();           break;
+			case XKB_KEY_d:      focusstack(+1);         break;
+			case XKB_KEY_a:      focusstack(-1);         break;
+			case XKB_KEY_space:  togglefloating();       break;
+			case XKB_KEY_f:      togglefullscreen();     break;
+			case XKB_KEY_m:      setlayout(&layouts[0]); break;
+			case XKB_KEY_t:      setlayout(&layouts[1]); break;
+			case XKB_KEY_Escape: quit();                 break;
 			default: return 0; break;
 		}
 	}
@@ -184,19 +185,14 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 // 	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_d,                     incnmaster,       {.i = -1} },
 // 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_A,                     setmfact,         {.f = -0.05} },
 // 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_D,                     setmfact,         {.f = +0.05} },
-// 	{ MODKEY,                    XKB_KEY_m,                     setlayout,        {.v = &layouts[0]} },
-// 	{ MODKEY,                    XKB_KEY_t,                     setlayout,        {.v = &layouts[1]} },
-// 	{ MODKEY,                    XKB_KEY_space,		    togglefloating,   {0} },
-// 	{ MODKEY,                    XKB_KEY_f,                     togglefullscreen, {0} },
 // 	TAGKEYS(                     XKB_KEY_1, XKB_KEY_exclam,                       0),
 // 	TAGKEYS(                     XKB_KEY_2, XKB_KEY_quotedbl,                     1),
 // 	TAGKEYS(                     XKB_KEY_3, XKB_KEY_sterling,                     2),
 // 	TAGKEYS(                     XKB_KEY_4, XKB_KEY_dollar,                       3),
 // 	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
-};
+//};
 
 static const Button buttons[] = {
 	{ MODKEY, BTN_LEFT,   moveresize,       {.ui = CurMove} },
-	{ MODKEY, BTN_MIDDLE, togglefullscreen, {0} },
 	{ MODKEY, BTN_RIGHT,  moveresize,       {.ui = CurResize} },
 };

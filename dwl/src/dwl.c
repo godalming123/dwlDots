@@ -78,13 +78,6 @@ typedef union {
 	const void *v;
 } Arg;
 
-typedef struct {
-	unsigned int mod;
-	unsigned int button;
-	void (*func)(const Arg *);
-	const Arg arg;
-} Button;
-
 typedef struct Monitor Monitor;
 typedef struct {
 	/* Must keep these three elements in this order */
@@ -234,7 +227,6 @@ static Client *focustop(Monitor *m);
 static void fullscreennotify(struct wl_listener *listener, void *data);
 static void incnmaster(int num);
 static void inputdevice(struct wl_listener *listener, void *data);
-static int keybinding(uint32_t mods, xkb_keysym_t sym);
 static void keypress(struct wl_listener *listener, void *data);
 static void keypressmod(struct wl_listener *listener, void *data);
 static int keyrepeat(void *data);
@@ -247,7 +239,7 @@ static void monocle(Monitor *m);
 static void motionabsolute(struct wl_listener *listener, void *data);
 static void motionnotify(uint32_t time);
 static void motionrelative(struct wl_listener *listener, void *data);
-static void moveresize(const Arg *arg);
+static void moveresize(unsigned int movementType);
 static void outputmgrapply(struct wl_listener *listener, void *data);
 static void outputmgrapplyortest(struct wlr_output_configuration_v1 *config, int test);
 static void outputmgrtest(struct wl_listener *listener, void *data);
@@ -489,7 +481,6 @@ void buttonpress(struct wl_listener *listener, void *data) {
 	struct wlr_keyboard *keyboard;
 	uint32_t mods;
 	Client *c;
-	const Button *b;
 
 	IDLE_NOTIFY_ACTIVITY;
 
@@ -506,13 +497,8 @@ void buttonpress(struct wl_listener *listener, void *data) {
 
 		keyboard = wlr_seat_get_keyboard(seat);
 		mods = keyboard ? wlr_keyboard_get_modifiers(keyboard) : 0;
-		for (b = buttons; b < END(buttons); b++) {
-			if (CLEANMASK(mods) == CLEANMASK(b->mod) && event->button == b->button && b->func) {
-				b->func(&b->arg);
-				return;
-			}
-		}
-		break;
+		if (handleMousePress(mods, event->button))
+			return;
 	case WLR_BUTTON_RELEASED:
 		/* If you released any buttons, we exit interactive move/resize mode. */
 		if (!locked && cursor_mode != CurNormal && cursor_mode != CurPressed) {
@@ -1216,9 +1202,10 @@ void keypress(struct wl_listener *listener, void *data) {
 				ignoreNextKeyrelease = true;
 			
 			// now handle the keypress
-			handled = keybinding(mods, syms[nsyms-1]);
+			handled = handlekeybinding(mods, syms[nsyms-1]);
 		}
 		else if (event->state == WL_KEYBOARD_KEY_STATE_RELEASED) {
+			// if the alt modifier is being held and you release it
 			if (mods == WLR_MODIFIER_ALT && syms[0] == 65513) {
 				if (!ignoreNextKeyrelease) {
 					if (fork() == 0) {
@@ -1274,7 +1261,7 @@ int keyrepeat(void *data) {
 				1000 / kb->wlr_keyboard->repeat_info.rate);
 
 		for (i = 0; i < kb->nsyms; i++)
-			keybinding(kb->mods, kb->keysyms[i]);
+			handlekeybinding(kb->mods, kb->keysyms[i]);
 	}
 
 	return 0;
@@ -1481,7 +1468,7 @@ void motionrelative(struct wl_listener *listener, void *data) {
 	motionnotify(event->time_msec);
 }
 
-void moveresize(const Arg *arg) {
+void moveresize(unsigned int movementType) {
 	if (cursor_mode != CurNormal && cursor_mode != CurPressed)
 		return;
 	xytonode(cursor->x, cursor->y, NULL, &grabc, NULL, NULL, NULL);
@@ -1490,7 +1477,7 @@ void moveresize(const Arg *arg) {
 
 	/* Float the window and tell motionnotify to grab it */
 	setfloating(grabc, 1);
-	switch (cursor_mode = arg->ui) {
+	switch (cursor_mode = movementType) {
 	case CurMove:
 		grabcx = cursor->x - grabc->geom.x;
 		grabcy = cursor->y - grabc->geom.y;

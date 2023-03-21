@@ -137,7 +137,7 @@ static void run(char *cmdTxt) {
 	}
 }
 
-int keybinding(uint32_t mods, xkb_keysym_t sym) {
+int handlekeybinding(uint32_t mods, xkb_keysym_t sym) {
 	/*
 	 * Here we handle compositor keybindings. This is when the compositor is
 	 * processing keys, rather than passing them on to the client for its own
@@ -178,6 +178,21 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 	return 1;
 }
 
+int handleMousePress(unsigned int mod, unsigned int button) {
+	if (mod == MODKEY) {
+		switch (button) {
+			case BTN_LEFT:   moveresize(CurMove); break;
+			case BTN_MIDDLE: togglefullscreen(); break;
+			case BTN_RIGHT:  moveresize(CurResize); break;
+			default:         return 0; break; // did not handle the button press
+		}
+	}
+	else {
+		return 0; // did not handle the button press
+	}
+	return 1;
+}
+
 // static const Key keys[] = {
 // 	/* Note that Shift changes certain key codes: c -> C, 2 -> quotedbl, etc. */
 // 	/* modifier                  key                            function          argument */
@@ -192,7 +207,3 @@ int keybinding(uint32_t mods, xkb_keysym_t sym) {
 // 	TAGKEYS(                     XKB_KEY_5, XKB_KEY_percent,                      4),
 //};
 
-static const Button buttons[] = {
-	{ MODKEY, BTN_LEFT,   moveresize,       {.ui = CurMove} },
-	{ MODKEY, BTN_RIGHT,  moveresize,       {.ui = CurResize} },
-};

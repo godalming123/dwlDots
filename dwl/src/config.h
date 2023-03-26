@@ -19,7 +19,6 @@ static const float fullscreen_bg[]         = {0.18, 0.2, 0.25, 1.0};
 // 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible
 static const int bypass_surface_visibility = 0;
 
-
 // LAYOUTS
 static void twoWindows(Monitor *m);
 
@@ -93,7 +92,7 @@ LIBINPUT_CONFIG_TAP_MAP_LMR -- 1/2/3 finger tap maps to left/middle/right
 */
 static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TAP_MAP_LRM;
 
-/* KEYBINDINGS */
+// KEYBINDINGS
 #define MODKEY WLR_MODIFIER_ALT
 
 #define TAGKEYS(KEY,SKEY,TAG) \
@@ -102,7 +101,7 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 	{ MODKEY|WLR_MODIFIER_SHIFT,                   SKEY,           tag,             {.ui = 1 << TAG} }, \
 	{ MODKEY|WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT, SKEY,           toggletag,       {.ui = 1 << TAG} }
 
-/* commands */
+// commands
 static const char *menucmd =
 	"tofi-drun "
 	"--drun-launch=true "
